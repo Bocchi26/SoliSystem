@@ -2,6 +2,7 @@ C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\m
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\application\command\CrearSolicitudUseCase.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\entity\Solicitud.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\enums\EstadoSolicitud.java
+C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\observer\NotificacionObserver.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\infrastructure\config\DatabaseConfig.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\presentation\Main.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\repository\SolicitudRepository.java
@@ -14,7 +15,6 @@ C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\m
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\presentation\ConsoleController.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\infrastructure\persistence\UsuarioRepositoryJdbc.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\repository\TipoSolicitudRepository.java
-C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\application\NotificacionObserver.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\domain\entity\TipoSolicitud.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\infrastructure\persistence\SolicitudRepositoryJdbc.java
 C:\Users\roron\Documents\Arquitectura de Sofware\poryecto final\SoliSystem\src\main\java\games\solisystem\application\query\ConsultarSolicitudesPorEstadoUseCase.java

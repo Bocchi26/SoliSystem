@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UsuarioRepository {
-    void save(Usuario usuario);
-    Optional<Usuario> findById(Long id);
-    Optional<Usuario> findByCorreo(String correo);
-    List<Usuario> findAll();
+    void guardar(Usuario usuario);
+    Optional<Usuario> buscarPorId(Long id);
+    Optional<Usuario> buscarPorCorreo(String correo);
+    List<Usuario> buscarTodos();
 }

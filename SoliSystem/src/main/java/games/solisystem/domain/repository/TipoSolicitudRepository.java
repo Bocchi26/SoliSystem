@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TipoSolicitudRepository {
-    void save(TipoSolicitud tipoSolicitud);
-    Optional<TipoSolicitud> findById(Long id);
-    List<TipoSolicitud> findAll();
+    void guardar(TipoSolicitud tipoSolicitud);
+    Optional<TipoSolicitud> buscarPorId(Long id);
+    List<TipoSolicitud> buscarTodos();
 }

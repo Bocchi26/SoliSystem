@@ -12,7 +12,7 @@ import java.util.Optional;
 public class TipoSolicitudRepositoryJdbc implements TipoSolicitudRepository {
 
     @Override
-    public void save(TipoSolicitud tipoSolicitud) {
+    public void guardar(TipoSolicitud tipoSolicitud) {
         String sql = "INSERT INTO tipos_solicitud (nombre, descripcion, tiempo_estimado_dias) VALUES (?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
@@ -20,51 +20,44 @@ public class TipoSolicitudRepositoryJdbc implements TipoSolicitudRepository {
             ps.setString(2, tipoSolicitud.getDescripcion());
             ps.setInt(3, tipoSolicitud.getTiempoEstimadoDias());
             ps.executeUpdate();
-
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    tipoSolicitud.setId(rs.getLong(1));
-                }
+                if (rs.next()) tipoSolicitud.setId(rs.getLong(1));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error al guardar el tipo de solicitud en la base de datos", e);
+            throw new RuntimeException("Error al guardar el tipo de solicitud", e);
         }
     }
 
     @Override
-    public Optional<TipoSolicitud> findById(Long id) {
+    public Optional<TipoSolicitud> buscarPorId(Long id) {
         String sql = "SELECT id, nombre, descripcion, tiempo_estimado_dias FROM tipos_solicitud WHERE id = ?";
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapRowToTipoSolicitud(rs));
-                }
+                if (rs.next()) return Optional.of(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Error al buscar el tipo de solicitud por ID", e);
+            throw new RuntimeException("Error al buscar tipo de solicitud por ID", e);
         }
         return Optional.empty();
     }
 
     @Override
-    public List<TipoSolicitud> findAll() {
+    public List<TipoSolicitud> buscarTodos() {
         String sql = "SELECT id, nombre, descripcion, tiempo_estimado_dias FROM tipos_solicitud";
-        List<TipoSolicitud> tipos = new ArrayList<>();
+        List<TipoSolicitud> lista = new ArrayList<>();
         try (Connection conn = DatabaseConfig.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) {
-                tipos.add(mapRowToTipoSolicitud(rs));
-            }
+            while (rs.next()) lista.add(mapRow(rs));
         } catch (SQLException e) {
-            throw new RuntimeException("Error al obtener la lista de tipos de solicitud", e);
+            throw new RuntimeException("Error al listar tipos de solicitud", e);
         }
-        return tipos;
+        return lista;
     }
 
-    private TipoSolicitud mapRowToTipoSolicitud(ResultSet rs) throws SQLException {
+    private TipoSolicitud mapRow(ResultSet rs) throws SQLException {
         return new TipoSolicitud(
             rs.getLong("id"),
             rs.getString("nombre"),
