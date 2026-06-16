@@ -28,18 +28,13 @@ import games.solisystem.domain.repository.UsuarioRepository;
 
 public class ConsoleController {
 
-    // ── Patrones de validación ────────────────────────────────────────────────
-    /** Solo letras (incluyendo acentos y ñ) y espacios — sin números ni símbolos */
+
     private static final Pattern SOLO_LETRAS   = Pattern.compile("^[\\p{L} .'-]+$");
-    /** Formato básico de correo electrónico */
     private static final Pattern CORREO_VALIDO = Pattern.compile(
             "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    /** Descripción: al menos 10 caracteres, sin restricción de caracteres */
     private static final int MIN_DESCRIPCION   = 10;
-    /** Nombre de tipo de solicitud: solo letras, números y espacios */
     private static final Pattern NOMBRE_TIPO   = Pattern.compile("^[\\p{L}\\p{N} .,-]+$");
 
-    // ── Dependencias ──────────────────────────────────────────────────────────
     private final RegistrarUsuarioUseCase              registrarUsuarioUseCase;
     private final RegistrarTipoSolicitudUseCase        registrarTipoSolicitudUseCase;
     private final CrearSolicitudUseCase                crearSolicitudUseCase;
@@ -75,7 +70,6 @@ public class ConsoleController {
         this.solicitudRepository           = solicitudRepository;
     }
 
-    // ── Menú principal ────────────────────────────────────────────────────────
     public void iniciar() {
         linea();
         System.out.println("  Bienvenido a SolySistem");
@@ -109,20 +103,16 @@ public class ConsoleController {
         System.out.println("\n  Hasta luego.\n");
     }
 
-    // ── CU1: Registrar usuario ────────────────────────────────────────────────
     private void registrarUsuario() {
         titulo("Registrar Nuevo Usuario");
         aviso("Escriba 0 en cualquier campo para cancelar y regresar al menú.");
 
-        // Nombre: solo letras y espacios, sin números
         String nombre = leerNombre("Nombre completo");
         if (nombre == null) { cancelado(); return; }
 
-        // Correo: formato válido
         String correo = leerCorreo("Correo electrónico");
         if (correo == null) { cancelado(); return; }
 
-        // Rol: menú de selección con reintento
         RolEnum rol = leerRol();
         if (rol == null) { cancelado(); return; }
 
@@ -135,20 +125,18 @@ public class ConsoleController {
         }
     }
 
-    // ── CU2: Registrar tipo de solicitud ──────────────────────────────────────
     private void registrarTipoSolicitud() {
         titulo("Registrar Tipo de Solicitud");
         aviso("Escriba 0 en cualquier campo para cancelar y regresar al menú.");
 
-        // Nombre del tipo: solo letras, números y espacios
+
         String nombre = leerNombreTipo("Nombre del tipo");
         if (nombre == null) { cancelado(); return; }
 
-        // Descripción: texto libre, mínimo 10 caracteres
+
         String descripcion = leerDescripcion("Descripción");
         if (descripcion == null) { cancelado(); return; }
 
-        // Días: número entero positivo
         Integer dias = leerEnteroPositivo("Tiempo estimado de resolución (en días)");
         if (dias == null) { cancelado(); return; }
 
@@ -161,12 +149,10 @@ public class ConsoleController {
         }
     }
 
-    // ── CU3: Crear solicitud ──────────────────────────────────────────────────
     private void crearSolicitud() {
         titulo("Crear Nueva Solicitud");
         aviso("Escriba 0 en cualquier selección para cancelar y regresar al menú.");
 
-        // Usuarios solicitantes disponibles
         List<Usuario> solicitantes = usuarioRepository.buscarTodos().stream()
                 .filter(u -> u.getRol() == RolEnum.SOLICITANTE)
                 .toList();
@@ -186,7 +172,6 @@ public class ConsoleController {
         if (idxUsuario == -1) { cancelado(); return; }
         Usuario usuarioSeleccionado = solicitantes.get(idxUsuario);
 
-        // Tipos de solicitud disponibles
         List<TipoSolicitud> tipos = tipoSolicitudRepository.buscarTodos();
         if (tipos.isEmpty()) {
             error("No hay tipos de solicitud registrados. Registre uno primero.");
@@ -204,7 +189,6 @@ public class ConsoleController {
         if (idxTipo == -1) { cancelado(); return; }
         TipoSolicitud tipoSeleccionado = tipos.get(idxTipo);
 
-        // Descripción detallada: mínimo 10 caracteres
         String descripcion = leerDescripcion("Descripción detallada de la solicitud");
         if (descripcion == null) { cancelado(); return; }
 
@@ -221,7 +205,6 @@ public class ConsoleController {
         }
     }
 
-    // ── CU4: Cambiar estado ───────────────────────────────────────────────────
     private void cambiarEstado() {
         titulo("Cambiar Estado de una Solicitud");
         aviso("Escriba 0 en cualquier selección para cancelar y regresar al menú.");
@@ -272,7 +255,6 @@ public class ConsoleController {
         }
     }
 
-    // ── CU5: Consultar por estado ─────────────────────────────────────────────
     private void consultarPorEstado() {
         titulo("Consultar Solicitudes por Estado");
         aviso("Escriba 0 para cancelar y regresar al menú.");
@@ -308,7 +290,6 @@ public class ConsoleController {
         }
     }
 
-    // ── CU6: Generar reporte ──────────────────────────────────────────────────
     private void generarReporte() {
         titulo("Reporte General de Solicitudes");
         try {
@@ -326,17 +307,6 @@ public class ConsoleController {
         }
     }
 
-    // =========================================================================
-    // ── Métodos de lectura con validación y reintento ─────────────────────────
-    // =========================================================================
-
-    /**
-     * Lee un nombre de persona: solo letras (con acentos y ñ), espacios, puntos,
-     * apóstrofes y guiones. No permite números ni caracteres especiales.
-     * Repite hasta recibir un valor válido o que el usuario escriba "0".
-     *
-     * @return el nombre válido, o null si el usuario canceló escribiendo "0".
-     */
     private String leerNombre(String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + ": ");
@@ -360,12 +330,7 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee un nombre de tipo de solicitud: letras, números, espacios y puntuación básica.
-     * No puede estar vacío ni ser demasiado corto.
-     *
-     * @return el nombre válido, o null si el usuario canceló.
-     */
+
     private String leerNombreTipo(String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + ": ");
@@ -389,12 +354,7 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee un correo electrónico con formato válido.
-     * Repite hasta recibir un formato correcto o cancelar con "0".
-     *
-     * @return el correo válido, o null si canceló.
-     */
+
     private String leerCorreo(String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + ": ");
@@ -414,12 +374,7 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee una descripción de texto libre con longitud mínima.
-     * Repite hasta recibir un texto suficientemente largo o cancelar con "0".
-     *
-     * @return la descripción válida, o null si canceló.
-     */
+
     private String leerDescripcion(String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + ": ");
@@ -440,12 +395,6 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee un número entero mayor que cero.
-     * Repite hasta recibir un entero positivo válido o cancelar con "0".
-     *
-     * @return el entero positivo, o null si canceló.
-     */
     private Integer leerEnteroPositivo(String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + ": ");
@@ -458,7 +407,6 @@ public class ConsoleController {
                 continue;
             }
 
-            // Verificar que no contenga letras antes de parsear
             if (!entrada.matches("\\d+")) {
                 error("Debe ingresar únicamente dígitos (número entero positivo). Intente de nuevo.");
                 continue;
@@ -477,12 +425,7 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee la selección del rol (SOLICITANTE / FUNCIONARIO).
-     * Repite hasta recibir una opción válida o cancelar con "0".
-     *
-     * @return el RolEnum elegido, o null si canceló.
-     */
+
     private RolEnum leerRol() {
         while (true) {
             System.out.println("  Tipo de usuario:");
@@ -501,14 +444,7 @@ public class ConsoleController {
         }
     }
 
-    /**
-     * Lee una opción numérica entre 1 y max, con reintento automático.
-     * El usuario puede escribir "0" para cancelar.
-     *
-     * @param max     número máximo de opción válida.
-     * @param etiqueta texto del prompt mostrado al usuario.
-     * @return el índice base-0 de la opción elegida, o -1 si canceló con "0".
-     */
+
     private int leerOpcion(int max, String etiqueta) {
         while (true) {
             System.out.print("  " + etiqueta + " (0 para cancelar): ");
@@ -539,9 +475,7 @@ public class ConsoleController {
         }
     }
 
-    // ── Helpers de dominio ────────────────────────────────────────────────────
 
-    /** Devuelve los estados a los que se puede transicionar desde el estado actual */
     private List<EstadoEnum> transicionesPosibles(EstadoEnum actual) {
         return switch (actual) {
             case CREADA      -> List.of(EstadoEnum.EN_REVISION);
@@ -552,7 +486,6 @@ public class ConsoleController {
         };
     }
 
-    // ── Helpers de UI ─────────────────────────────────────────────────────────
 
     private void titulo(String texto) {
         System.out.println();

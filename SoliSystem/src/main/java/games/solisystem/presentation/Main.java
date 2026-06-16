@@ -20,38 +20,21 @@ import games.solisystem.infrastructure.persistence.SolicitudRepositoryJdbc;
 import games.solisystem.infrastructure.persistence.TipoSolicitudRepositoryJdbc;
 import games.solisystem.infrastructure.persistence.UsuarioRepositoryJdbc;
 
-/**
- * CAPA: Presentation — punto de entrada de la aplicación.
- *
- * Responsabilidad única: construir el grafo de dependencias (Composition Root)
- * e iniciar el controlador. Toda la inyección manual de dependencias ocurre aquí,
- * demostrando el patrón Dependency Injection sin framework externo.
- *
- * Flujo Clean Architecture:
- *   Main → ConsoleController → Use Cases → Domain interfaces
- *                                        ↑
- *                              Infrastructure implements
- */
+
 public class Main {
 
     public static void main(String[] args) {
         DatabaseConfig.initializeDatabase();
 
-        // ── 1. Infraestructura: repositorios concretos (JDBC) ────────────────
-        //    Las interfaces viven en domain; las implementaciones aquí.
-        //    Cambiar de PostgreSQL a H2 solo requiere cambiar estas líneas.
         UsuarioRepository       usuarioRepo       = new UsuarioRepositoryJdbc();
         TipoSolicitudRepository tipoSolicitudRepo = new TipoSolicitudRepositoryJdbc();
         SolicitudRepository     solicitudRepo     = new SolicitudRepositoryJdbc();
         NotificacionRepository  notificacionRepo  = new NotificacionRepositoryJdbc();
 
-        // ── 2. Patrón Observer (GoF) ─────────────────────────────────────────
-        //    NotificacionObserver es el observador concreto.
-        //    Los casos de uso solo conocen la interfaz SolicitudObserver.
+
         SolicitudObserver notificacionObserver = new NotificacionObserver(notificacionRepo);
         List<SolicitudObserver> observers = List.of(notificacionObserver);
 
-        // ── 3. Capa Application — Comandos (CQRS: escritura) ─────────────────
         RegistrarUsuarioUseCase registrarUsuario =
                 new RegistrarUsuarioUseCase(usuarioRepo);
 
@@ -71,16 +54,13 @@ public class Main {
                         
                         observers);
 
-        // ── 4. Capa Application — Consultas (CQRS: lectura) ──────────────────
         ConsultarSolicitudesPorEstadoUseCase consultarPorEstado =
                 new ConsultarSolicitudesPorEstadoUseCase(solicitudRepo);
 
         GenerarReporteUseCase generarReporte =
                 new GenerarReporteUseCase(solicitudRepo);
 
-        // ── 5. Capa Presentation — controlador de consola ────────────────────
-        //    Recibe todos los casos de uso por constructor.
-        //    No conoce ningún repositorio directamente.
+
         ConsoleController controller = new ConsoleController(
         registrarUsuario,
         registrarTipo,
@@ -88,11 +68,10 @@ public class Main {
         cambiarEstado,
         consultarPorEstado,
         generarReporte,
-        usuarioRepo,          // ← nuevo
-        tipoSolicitudRepo,    // ← nuevo
-        solicitudRepo);       // ← nuevo
+        usuarioRepo,   
+        tipoSolicitudRepo, 
+        solicitudRepo); 
 
-        // ── 6. Iniciar la aplicación ─────────────────────────────────────────
         controller.iniciar();
     }
 }

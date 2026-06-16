@@ -14,9 +14,6 @@ public class DatabaseConfig {
     private static final String USER = "postgres";
     private static final String PASSWORD = "123456789";
 
-    /**
-     * Obtiene una conexión activa a la base de datos PostgreSQL.
-     */
     public static Connection getConnection() throws SQLException {
         try {
             Class.forName("org.postgresql.Driver");
@@ -26,11 +23,7 @@ public class DatabaseConfig {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
-    /**
-     * Inicializa la base de datos ejecutando el archivo schema.sql.
-     * Útil para crear las tablas y sembrar datos de prueba automáticamente al
-     * arrancar.
-     */
+
     public static void initializeDatabase() {
         String schemaPath = "/games/solisystem/infrastructure/schema.sql";
         try (InputStream is = DatabaseConfig.class.getResourceAsStream(schemaPath)) {
@@ -45,7 +38,6 @@ public class DatabaseConfig {
 
             try (Connection conn = getConnection();
                     Statement stmt = conn.createStatement()) {
-                // Dividir el script por ";" para ejecutar cada sentencia individualmente
                 String[] statements = sql.split(";");
                 for (String statement : statements) {
                     String trimmed = statement.trim();

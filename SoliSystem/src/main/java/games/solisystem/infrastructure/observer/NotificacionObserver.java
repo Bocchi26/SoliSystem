@@ -7,11 +7,6 @@ import games.solisystem.domain.entity.Solicitud;
 import games.solisystem.domain.observer.SolicitudObserver;
 import games.solisystem.domain.repository.NotificacionRepository;
 
-/**
- * Observador concreto del patrón Observer.
- * Se activa cuando una solicitud es creada o cambia de estado,
- * y persiste automáticamente una notificación en la base de datos.
- */
 public class NotificacionObserver implements SolicitudObserver {
 
     private final NotificacionRepository notificacionRepository;

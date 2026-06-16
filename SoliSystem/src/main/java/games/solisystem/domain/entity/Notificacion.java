@@ -1,7 +1,8 @@
 package games.solisystem.domain.entity;
 
-import games.solisystem.domain.enums.EstadoEnum;
 import java.time.LocalDate;
+
+import games.solisystem.domain.enums.EstadoEnum;
 
 public class Notificacion {
     private Long id;
@@ -20,7 +21,6 @@ public class Notificacion {
         this.estadoSolicitud = estadoSolicitud;
     }
 
-    // Constructor que acepta EstadoEnum directamente (convierte a String)
     public Notificacion(Long id, Solicitud solicitud, String mensaje, LocalDate fecha, EstadoEnum estado) {
         this.id = id;
         this.solicitud = solicitud;

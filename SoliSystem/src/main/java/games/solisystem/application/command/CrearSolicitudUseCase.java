@@ -56,7 +56,6 @@ public class CrearSolicitudUseCase {
 
         solicitudRepository.guardar(solicitud);
 
-        // El Observer se encarga de persistir la notificación automáticamente
         for (SolicitudObserver observer : observers) {
             observer.onSolicitudCreada(solicitud);
         }

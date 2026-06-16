@@ -1,7 +1,8 @@
 package games.solisystem.domain.entity;
 
-import games.solisystem.domain.enums.EstadoEnum;
 import java.time.LocalDate;
+
+import games.solisystem.domain.enums.EstadoEnum;
 
 public class Solicitud {
     private Long id;
@@ -48,7 +49,6 @@ public class Solicitud {
     public EstadoEnum getEstado() { return estado; }
     public void setEstado(EstadoEnum estado) { this.estado = estado; }
 
-    /** Método de dominio: cambia el estado de la solicitud. */
     public void cambiarEstado(EstadoEnum nuevoEstado) {
         this.estado = nuevoEstado;
     }
