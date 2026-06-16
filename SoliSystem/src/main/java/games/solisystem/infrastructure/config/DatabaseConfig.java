@@ -10,9 +10,9 @@ import java.sql.Statement;
 import java.util.stream.Collectors;
 
 public class DatabaseConfig {
-    private static final String URL = "jdbc:postgresql://localhost:5432/SoliSystem_db";
-    private static final String USER = "soli_user_admin";
-    private static final String PASSWORD = "soli_user";
+    private static final String URL = "jdbc:postgresql://localhost:5432/postgres";
+    private static final String USER = "postgres";
+    private static final String PASSWORD = "123456789";
 
     /**
      * Obtiene una conexión activa a la base de datos PostgreSQL.

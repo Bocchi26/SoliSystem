@@ -33,7 +33,7 @@ public class RegistrarTipoSolicitudUseCase {
             throw new IllegalArgumentException("El nombre es obligatorio.");
         }
         if (command.getDescripcion() == null || command.getDescripcion().trim().isEmpty()) {
-            throw new IllegalArgumentException("La descripciÃ³n es obligatoria.");
+            throw new IllegalArgumentException("La descripcion es obligatoria.");
         }
         if (command.getTiempoEstimadoDias() <= 0) {
             throw new IllegalArgumentException("El tiempo estimado debe ser mayor que cero.");

@@ -44,7 +44,7 @@ public class RegistrarUsuarioUseCase {
             throw new IllegalArgumentException("El rol es obligatorio.");
         }
         if (command.getRol() != RolEnum.SOLICITANTE && command.getRol() != RolEnum.FUNCIONARIO) {
-            throw new IllegalArgumentException("El rol no es vÃ¡lido.");
+            throw new IllegalArgumentException("El rol no es valido.");
         }
     }
 }

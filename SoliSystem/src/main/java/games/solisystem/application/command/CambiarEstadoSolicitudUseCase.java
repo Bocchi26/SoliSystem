@@ -1,11 +1,9 @@
 package games.solisystem.application.command;
 
 import games.solisystem.application.dto.CambiarEstadoCommand;
-import games.solisystem.domain.entity.Notificacion;
 import games.solisystem.domain.entity.Solicitud;
 import games.solisystem.domain.enums.EstadoEnum;
 import games.solisystem.domain.observer.SolicitudObserver;
-import games.solisystem.domain.repository.NotificacionRepository;
 import games.solisystem.domain.repository.SolicitudRepository;
 
 import java.time.LocalDate;
@@ -15,45 +13,32 @@ import java.util.List;
 public class CambiarEstadoSolicitudUseCase {
 
     private final SolicitudRepository solicitudRepository;
-    private final NotificacionRepository notificacionRepository;
     private final List<SolicitudObserver> observers;
 
     public CambiarEstadoSolicitudUseCase(
             SolicitudRepository solicitudRepository,
-            NotificacionRepository notificacionRepository,
             List<SolicitudObserver> observers) {
         this.solicitudRepository = solicitudRepository;
-        this.notificacionRepository = notificacionRepository;
         this.observers = (observers != null) ? observers : new ArrayList<>();
     }
 
     public Solicitud ejecutar(CambiarEstadoCommand command) {
-        validar(command);
+    validar(command);
+    
+    Solicitud solicitud = solicitudRepository.buscarPorId(command.getSolicitudId())
+            .orElseThrow(() -> new IllegalArgumentException("La solicitud no existe."));
+    
+    validarTransicion(solicitud.getEstado(), command.getNuevoEstado());
+    solicitud.cambiarEstado(command.getNuevoEstado());
+    solicitudRepository.actualizar(solicitud);
 
-        Solicitud solicitud = solicitudRepository.buscarPorId(command.getSolicitudId())
-                .orElseThrow(() -> new IllegalArgumentException("La solicitud no existe."));
 
-        validarTransicion(solicitud.getEstado(), command.getNuevoEstado());
-
-        solicitud.cambiarEstado(command.getNuevoEstado());
-        solicitudRepository.actualizar(solicitud);
-
-        if (notificacionRepository != null) {
-            Notificacion notificacion = new Notificacion(
-                    null,
-                    solicitud,
-                    "La solicitud cambió de estado a " + command.getNuevoEstado(),
-                    LocalDate.now(),
-                    command.getNuevoEstado());
-            notificacionRepository.guardar(notificacion);
-        }
-
-        for (SolicitudObserver observer : observers) {
-            observer.onEstadoCambiado(solicitud);
-        }
-
-        return solicitud;
+    for (SolicitudObserver observer : observers) {
+        observer.onEstadoCambiado(solicitud);
     }
+
+    return solicitud;
+}
 
     private void validar(CambiarEstadoCommand command) {
         if (command == null) {

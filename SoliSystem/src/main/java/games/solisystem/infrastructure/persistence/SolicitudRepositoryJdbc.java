@@ -1,5 +1,15 @@
 package games.solisystem.infrastructure.persistence;
 
+import java.sql.Connection;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import games.solisystem.domain.entity.Solicitud;
 import games.solisystem.domain.entity.TipoSolicitud;
 import games.solisystem.domain.entity.Usuario;
@@ -7,11 +17,6 @@ import games.solisystem.domain.enums.EstadoEnum;
 import games.solisystem.domain.enums.RolEnum;
 import games.solisystem.domain.repository.SolicitudRepository;
 import games.solisystem.infrastructure.config.DatabaseConfig;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 public class SolicitudRepositoryJdbc implements SolicitudRepository {
 
@@ -41,7 +46,7 @@ public class SolicitudRepositoryJdbc implements SolicitudRepository {
             throw new RuntimeException("Error al guardar la solicitud", e);
         }
     }
-
+    
     @Override
     public void actualizar(Solicitud solicitud) {
         String sql = "UPDATE solicitudes SET usuario_id = ?, tipo_solicitud_id = ?, descripcion = ?, fecha_creacion = ?, estado = ? WHERE id = ?";

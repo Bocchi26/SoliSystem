@@ -1,10 +1,11 @@
-package games.solisystem.domain.observer;
+package games.solisystem.infrastructure.observer;
+
+import java.time.LocalDate;
 
 import games.solisystem.domain.entity.Notificacion;
 import games.solisystem.domain.entity.Solicitud;
+import games.solisystem.domain.observer.SolicitudObserver;
 import games.solisystem.domain.repository.NotificacionRepository;
-
-import java.time.LocalDate;
 
 /**
  * Observador concreto del patrón Observer.
