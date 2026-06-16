@@ -15,46 +15,35 @@ public class Notificacion {
 
     public Notificacion(Long id, Solicitud solicitud, String mensaje, LocalDate fecha, String estadoSolicitud) {
         this.id = id;
-        this.solicitud = solicitud;
-        this.mensaje = mensaje;
-        this.fecha = fecha;
+        setSolicitud(solicitud);
+        setMensaje(mensaje);
+        this.fecha = fecha != null ? fecha : LocalDate.now();
         this.estadoSolicitud = estadoSolicitud;
     }
 
-    public Notificacion(Long id, Solicitud solicitud, String mensaje, LocalDate fecha, EstadoEnum estado) {
-        this.id = id;
-        this.solicitud = solicitud;
-        this.mensaje = mensaje;
-        this.fecha = fecha;
-        this.estadoSolicitud = estado != null ? estado.name() : null;
+    // Constructor semántico preferido por el sistema
+    public Notificacion(Solicitud solicitud, String mensaje, EstadoEnum estado) {
+        this(null, solicitud, mensaje, LocalDate.now(), estado != null ? estado.name() : null);
     }
 
-    public Notificacion(Solicitud solicitud, String mensaje, LocalDate fecha, String estadoSolicitud) {
+    public void setSolicitud(Solicitud solicitud) {
+        if (solicitud == null) {
+            throw new IllegalArgumentException("La notificación requiere obligatoriamente una solicitud vinculada.");
+        }
         this.solicitud = solicitud;
-        this.mensaje = mensaje;
-        this.fecha = fecha;
-        this.estadoSolicitud = estadoSolicitud;
     }
 
-    public Notificacion(Solicitud solicitud, String mensaje, LocalDate fecha, EstadoEnum estado) {
-        this.solicitud = solicitud;
-        this.mensaje = mensaje;
-        this.fecha = fecha;
-        this.estadoSolicitud = estado != null ? estado.name() : null;
+    public void setMensaje(String mensaje) {
+        if (mensaje == null || mensaje.trim().isEmpty()) {
+            throw new IllegalArgumentException("El mensaje de notificación no puede estar vacío.");
+        }
+        this.mensaje = mensaje.trim();
     }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
     public Solicitud getSolicitud() { return solicitud; }
-    public void setSolicitud(Solicitud solicitud) { this.solicitud = solicitud; }
-
     public String getMensaje() { return mensaje; }
-    public void setMensaje(String mensaje) { this.mensaje = mensaje; }
-
     public LocalDate getFecha() { return fecha; }
-    public void setFecha(LocalDate fecha) { this.fecha = fecha; }
-
     public String getEstadoSolicitud() { return estadoSolicitud; }
-    public void setEstadoSolicitud(String estadoSolicitud) { this.estadoSolicitud = estadoSolicitud; }
 }

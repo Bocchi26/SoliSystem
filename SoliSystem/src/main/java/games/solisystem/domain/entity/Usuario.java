@@ -11,27 +11,50 @@ public class Usuario {
     public Usuario() {}
 
     public Usuario(Long id, String nombre, String correo, RolEnum rol) {
-        this.id = id;
-        this.nombre = nombre;
-        this.correo = correo;
-        this.rol = rol;
+        setId(id);
+        setNombre(nombre);
+        setCorreo(correo);
+        setRol(rol);
     }
 
     public Usuario(String nombre, String correo, RolEnum rol) {
-        this.nombre = nombre;
-        this.correo = correo;
+        this(null, nombre, correo, rol);
+    }
+
+    // --- Reglas de negocio embebidas en el Dominio ---
+    
+    public void setNombre(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del usuario no puede estar vacío.");
+        }
+        this.nombre = nombre.trim();
+    }
+
+    public void setCorreo(String correo) {
+        if (correo == null || correo.trim().isEmpty()) {
+            throw new IllegalArgumentException("El correo del usuario no puede estar vacío.");
+        }
+        if (!correo.contains("@")) { // Validación básica intrínseca al formato del dominio
+            throw new IllegalArgumentException("El formato del correo electrónico es inválido.");
+        }
+        this.correo = correo.trim();
+    }
+
+    public void setRol(RolEnum rol) {
+        if (rol == null) {
+            throw new IllegalArgumentException("El rol del usuario es obligatorio.");
+        }
         this.rol = rol;
+    }
+
+    // Comportamiento de Dominio (Evita preguntar el rol afuera; le preguntamos a la entidad)
+    public boolean puedeCrearSolicitudes() {
+        return this.rol == RolEnum.SOLICITANTE;
     }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
     public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
-
     public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
-
     public RolEnum getRol() { return rol; }
-    public void setRol(RolEnum rol) { this.rol = rol; }
 }

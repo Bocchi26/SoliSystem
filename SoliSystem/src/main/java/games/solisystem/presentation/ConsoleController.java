@@ -1,6 +1,7 @@
 package games.solisystem.presentation;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -17,500 +18,354 @@ import games.solisystem.application.dto.RegistrarUsuarioCommand;
 import games.solisystem.application.dto.ReporteResponse;
 import games.solisystem.application.query.ConsultarSolicitudesPorEstadoUseCase;
 import games.solisystem.application.query.GenerarReporteUseCase;
+import games.solisystem.application.query.ListarTiposSolicitudUseCase;
+import games.solisystem.application.query.ListarTodasLasSolicitudesUseCase;
+import games.solisystem.application.query.ListarUsuariosUseCase;
 import games.solisystem.domain.entity.Solicitud;
 import games.solisystem.domain.entity.TipoSolicitud;
 import games.solisystem.domain.entity.Usuario;
 import games.solisystem.domain.enums.EstadoEnum;
 import games.solisystem.domain.enums.RolEnum;
-import games.solisystem.domain.repository.SolicitudRepository;
-import games.solisystem.domain.repository.TipoSolicitudRepository;
-import games.solisystem.domain.repository.UsuarioRepository;
 
 public class ConsoleController {
 
+    private static final Pattern SOLO_LETRAS = Pattern.compile("^[\\p{L} .'-]+$");
+    private static final Pattern CORREO_VALIDO = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern NOMBRE_TIPO = Pattern.compile("^[\\p{L}\\p{N} .,-]+$");
 
-    private static final Pattern SOLO_LETRAS   = Pattern.compile("^[\\p{L} .'-]+$");
-    private static final Pattern CORREO_VALIDO = Pattern.compile(
-            "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final int MIN_DESCRIPCION   = 10;
-    private static final Pattern NOMBRE_TIPO   = Pattern.compile("^[\\p{L}\\p{N} .,-]+$");
+    private final RegistrarUsuarioUseCase registrarUsuarioUseCase;
+    private final RegistrarTipoSolicitudUseCase registrarTipoSolicitudUseCase;
+    private final CrearSolicitudUseCase crearSolicitudUseCase;
+    private final CambiarEstadoSolicitudUseCase cambiarEstadoSolicitudUseCase;
+    private final ConsultarSolicitudesPorEstadoUseCase consultarSolicitudesPorEstadoUseCase;
+    private final GenerarReporteUseCase generarReporteUseCase;
+    
+    private final ListarUsuariosUseCase listarUsuariosUseCase;
+    private final ListarTiposSolicitudUseCase listarTiposSolicitudUseCase;
+    private final ListarTodasLasSolicitudesUseCase listarTodasLasSolicitudesUseCase;
 
-    private final RegistrarUsuarioUseCase              registrarUsuarioUseCase;
-    private final RegistrarTipoSolicitudUseCase        registrarTipoSolicitudUseCase;
-    private final CrearSolicitudUseCase                crearSolicitudUseCase;
-    private final CambiarEstadoSolicitudUseCase        cambiarEstadoSolicitudUseCase;
-    private final ConsultarSolicitudesPorEstadoUseCase consultarPorEstadoUseCase;
-    private final GenerarReporteUseCase                generarReporteUseCase;
-
-    private final UsuarioRepository       usuarioRepository;
-    private final TipoSolicitudRepository tipoSolicitudRepository;
-    private final SolicitudRepository     solicitudRepository;
-
-    private final Scanner scanner = new Scanner(System.in);
+    private final Scanner scanner;
+    private Usuario usuarioAutenticado;
 
     public ConsoleController(
             RegistrarUsuarioUseCase registrarUsuarioUseCase,
             RegistrarTipoSolicitudUseCase registrarTipoSolicitudUseCase,
             CrearSolicitudUseCase crearSolicitudUseCase,
             CambiarEstadoSolicitudUseCase cambiarEstadoSolicitudUseCase,
-            ConsultarSolicitudesPorEstadoUseCase consultarPorEstadoUseCase,
+            ConsultarSolicitudesPorEstadoUseCase consultarSolicitudesPorEstadoUseCase,
             GenerarReporteUseCase generarReporteUseCase,
-            UsuarioRepository usuarioRepository,
-            TipoSolicitudRepository tipoSolicitudRepository,
-            SolicitudRepository solicitudRepository) {
-
-        this.registrarUsuarioUseCase       = registrarUsuarioUseCase;
+            ListarUsuariosUseCase listarUsuariosUseCase,
+            ListarTiposSolicitudUseCase listarTiposSolicitudUseCase,
+            ListarTodasLasSolicitudesUseCase listarTodasLasSolicitudesUseCase) {
+        this.registrarUsuarioUseCase = registrarUsuarioUseCase;
         this.registrarTipoSolicitudUseCase = registrarTipoSolicitudUseCase;
-        this.crearSolicitudUseCase         = crearSolicitudUseCase;
+        this.crearSolicitudUseCase = crearSolicitudUseCase;
         this.cambiarEstadoSolicitudUseCase = cambiarEstadoSolicitudUseCase;
-        this.consultarPorEstadoUseCase     = consultarPorEstadoUseCase;
-        this.generarReporteUseCase         = generarReporteUseCase;
-        this.usuarioRepository             = usuarioRepository;
-        this.tipoSolicitudRepository       = tipoSolicitudRepository;
-        this.solicitudRepository           = solicitudRepository;
+        this.consultarSolicitudesPorEstadoUseCase = consultarSolicitudesPorEstadoUseCase;
+        this.generarReporteUseCase = generarReporteUseCase;
+        this.listarUsuariosUseCase = listarUsuariosUseCase;
+        this.listarTiposSolicitudUseCase = listarTiposSolicitudUseCase;
+        this.listarTodasLasSolicitudesUseCase = listarTodasLasSolicitudesUseCase;
+        this.scanner = new Scanner(System.in);
     }
 
     public void iniciar() {
-        linea();
-        System.out.println("  Bienvenido a SolySistem");
-        System.out.println("  Sistema de Gestión de Solicitudes Empresariales");
-        linea();
+        boolean salir = false;
+        while (!salir) {
+            if (usuarioAutenticado == null) {
+                identificarUsuario();
+                continue;
+            }
 
-        boolean activo = true;
-        while (activo) {
-            System.out.println("\n  ¿Qué desea hacer?");
-            System.out.println("  1. Registrar nuevo usuario");
-            System.out.println("  2. Registrar tipo de solicitud");
-            System.out.println("  3. Crear una solicitud");
-            System.out.println("  4. Cambiar estado de una solicitud");
-            System.out.println("  5. Ver solicitudes por estado");
-            System.out.println("  6. Generar reporte general");
-            System.out.println("  0. Salir");
-            System.out.print("\n  Opción: ");
-
-            String opcion = scanner.nextLine().trim();
-            switch (opcion) {
-                case "1" -> registrarUsuario();
-                case "2" -> registrarTipoSolicitud();
-                case "3" -> crearSolicitud();
-                case "4" -> cambiarEstado();
-                case "5" -> consultarPorEstado();
-                case "6" -> generarReporte();
-                case "0" -> activo = false;
-                default  -> error("Opción no válida. Elija entre 0 y 6.");
+            if (usuarioAutenticado.getRol() == RolEnum.SOLICITANTE) {
+                salir = mostrarMenuSolicitante();
+            } else if (usuarioAutenticado.getRol() == RolEnum.FUNCIONARIO) {
+                salir = mostrarMenuFuncionario();
             }
         }
-        System.out.println("\n  Hasta luego.\n");
+    }
+
+    private void identificarUsuario() {
+        System.out.println("\n--- SOLISYSTEM ---");
+        System.out.print("Ingrese ID de usuario (o escriba 'crear' para registrarse): ");
+        String entrada = scanner.nextLine().trim();
+
+        if (entrada.equalsIgnoreCase("crear")) {
+            registrarUsuario();
+            return;
+        }
+
+        try {
+            Long id = Long.parseLong(entrada);
+            Optional<Usuario> usuarioOpt = listarUsuariosUseCase.ejecutar().stream()
+                    .filter(u -> u.getId().equals(id))
+                    .findFirst();
+
+            if (usuarioOpt.isPresent()) {
+                this.usuarioAutenticado = usuarioOpt.get();
+                System.out.println("Sesión iniciada: " + usuarioAutenticado.getNombre() + " (" + usuarioAutenticado.getRol() + ")");
+            } else {
+                System.out.println("Error: El ID de usuario no existe.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Error: Ingrese un identificador numérico válido.");
+        }
+    }
+
+    private boolean mostrarMenuSolicitante() {
+        System.out.println("\n[ MENU SOLICITANTE | Sesión: " + usuarioAutenticado.getNombre() + " ]");
+        System.out.println("1. Crear solicitud");
+        System.out.println("2. Consultar mis solicitudes por estado");
+        System.out.println("3. Cerrar sesión");
+        System.out.println("0. Salir");
+        System.out.print("Seleccione una opción: ");
+
+        String opcion = scanner.nextLine().trim();
+        switch (opcion) {
+            case "1" -> crearSolicitud();
+            case "2" -> consultarPorEstado();
+            case "3" -> cerrarSesion();
+            case "0" -> { return true; }
+            default -> System.out.println("Opción no válida.");
+        }
+        return false;
+    }
+
+    private boolean mostrarMenuFuncionario() {
+        System.out.println("\n[ MENÚ FUNCIONARIO | Sesión: " + usuarioAutenticado.getNombre() + " ]");
+        System.out.println("1. Registrar tipo de solicitud");
+        System.out.println("2. Cambiar estado de una solicitud");
+        System.out.println("3. Consultar solicitudes por estado");
+        System.out.println("4. Ver reporte estadístico");
+        System.out.println("5. Registrar nuevo usuario");
+        System.out.println("6. Cerrar sesión");
+        System.out.println("0. Salir");
+        System.out.print("Seleccione una opción: ");
+
+        String opcion = scanner.nextLine().trim();
+        switch (opcion) {
+            case "1" -> registrarTipoSolicitud();
+            case "2" -> cambiarEstado();
+            case "3" -> consultarPorEstado();
+            case "4" -> generarReporte();
+            case "5" -> registrarUsuario();
+            case "6" -> cerrarSesion();
+            case "0" -> { return true; }
+            default -> System.out.println("Opción no válida.");
+        }
+        return false;
+    }
+
+    private void cerrarSesion() {
+        this.usuarioAutenticado = null;
+        System.out.println("Sesión finalizada.");
+    }
+
+    private void crearSolicitud() {
+        if (usuarioAutenticado.getRol() != RolEnum.SOLICITANTE) {
+            System.out.println("Acceso denegado: Operación exclusiva para solicitantes.");
+            return;
+        }
+
+        List<TipoSolicitud> tipos = listarTiposSolicitudUseCase.ejecutar();
+        if (tipos.isEmpty()) {
+            System.out.println("No hay tipos de solicitud disponibles en el sistema.");
+            return;
+        }
+
+        System.out.println("\nTipos de solicitud:");
+        for (int i = 0; i < tipos.size(); i++) {
+            TipoSolicitud t = tipos.get(i);
+            System.out.printf("  %d. %s (%d días estimados) - %s%n", i + 1, t.getNombre(), t.getTiempoEstimadoDias(), t.getDescripcion());
+        }
+        
+        int idxTipo = leerOpcion(tipos.size(), "Seleccione el tipo de solicitud");
+        if (idxTipo == -1) return;
+        TipoSolicitud tipoSeleccionado = tipos.get(idxTipo);
+
+        System.out.print("Descripción del caso (o '0' para cancelar): ");
+        String descripcion = scanner.nextLine().trim();
+        if (descripcion.equals("0") || descripcion.isEmpty()) {
+            System.out.println("Operación cancelada.");
+            return;
+        }
+
+        try {
+            Solicitud solicitud = crearSolicitudUseCase.ejecutar(
+                    new CrearSolicitudCommand(usuarioAutenticado.getId(), tipoSeleccionado.getId(), descripcion));
+            System.out.println("Solicitud creada con éxito. ID asignado: " + solicitud.getId());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
     }
 
     private void registrarUsuario() {
-        titulo("Registrar Nuevo Usuario");
-        aviso("Escriba 0 en cualquier campo para cancelar y regresar al menú.");
+        System.out.println("\n[ Registro de Usuario ]");
+        
+        String nombre = leerEntradaSimple("Nombre completo");
+        if (nombre == null) return;
+        if (!SOLO_LETRAS.matcher(nombre).matches()) {
+            System.out.println("Error: El nombre contiene caracteres inválidos.");
+            return;
+        }
+        
+        String correo = leerEntradaSimple("Correo electrónico");
+        if (correo == null) return;
+        if (!CORREO_VALIDO.matcher(correo).matches()) {
+            System.out.println("Error: Formato de correo no válido.");
+            return;
+        }
+        
+        System.out.println("Roles del sistema:");
+        RolEnum[] roles = RolEnum.values();
+        for (int i = 0; i < roles.length; i++) {
+            System.out.printf("  %d. %s%n", i + 1, roles[i]);
+        }
 
-        String nombre = leerNombre("Nombre completo");
-        if (nombre == null) { cancelado(); return; }
-
-        String correo = leerCorreo("Correo electrónico");
-        if (correo == null) { cancelado(); return; }
-
-        RolEnum rol = leerRol();
-        if (rol == null) { cancelado(); return; }
+        int idxRol = leerOpcion(roles.length, "Seleccione el rol");
+        if (idxRol == -1) return;
+        RolEnum rol = roles[idxRol];
 
         try {
-            Usuario usuario = registrarUsuarioUseCase.ejecutar(
-                    new RegistrarUsuarioCommand(nombre, correo, rol));
-            exito("Usuario registrado correctamente. ID asignado: " + usuario.getId());
+            Usuario usuario = registrarUsuarioUseCase.ejecutar(new RegistrarUsuarioCommand(nombre, correo, rol));
+            System.out.println("Usuario registrado. ID generado: " + usuario.getId());
         } catch (IllegalArgumentException e) {
-            error(e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
     private void registrarTipoSolicitud() {
-        titulo("Registrar Tipo de Solicitud");
-        aviso("Escriba 0 en cualquier campo para cancelar y regresar al menú.");
-
-
-        String nombre = leerNombreTipo("Nombre del tipo");
-        if (nombre == null) { cancelado(); return; }
-
-
-        String descripcion = leerDescripcion("Descripción");
-        if (descripcion == null) { cancelado(); return; }
-
-        Integer dias = leerEnteroPositivo("Tiempo estimado de resolución (en días)");
-        if (dias == null) { cancelado(); return; }
-
-        try {
-            TipoSolicitud tipo = registrarTipoSolicitudUseCase.ejecutar(
-                    new RegistrarTipoSolicitudCommand(nombre, descripcion, dias));
-            exito("Tipo de solicitud registrado. ID asignado: " + tipo.getId());
-        } catch (IllegalArgumentException e) {
-            error(e.getMessage());
-        }
-    }
-
-    private void crearSolicitud() {
-        titulo("Crear Nueva Solicitud");
-        aviso("Escriba 0 en cualquier selección para cancelar y regresar al menú.");
-
-        List<Usuario> solicitantes = usuarioRepository.buscarTodos().stream()
-                .filter(u -> u.getRol() == RolEnum.SOLICITANTE)
-                .toList();
-
-        if (solicitantes.isEmpty()) {
-            error("No hay usuarios con rol SOLICITANTE registrados. Registre uno primero.");
+        System.out.println("\n[ Registro de Tipo de Solicitud ]");
+        
+        String nombre = leerEntradaSimple("Nombre del tipo de trámite");
+        if (nombre == null) return;
+        if (!NOMBRE_TIPO.matcher(nombre).matches()) {
+            System.out.println("Error: Formato de nombre inválido.");
             return;
         }
-
-        System.out.println("  Usuarios disponibles:");
-        for (int i = 0; i < solicitantes.size(); i++) {
-            Usuario u = solicitantes.get(i);
-            System.out.printf("  %d. %s (%s)%n", i + 1, u.getNombre(), u.getCorreo());
-        }
-
-        int idxUsuario = leerOpcion(solicitantes.size(), "Seleccione el usuario (número)");
-        if (idxUsuario == -1) { cancelado(); return; }
-        Usuario usuarioSeleccionado = solicitantes.get(idxUsuario);
-
-        List<TipoSolicitud> tipos = tipoSolicitudRepository.buscarTodos();
-        if (tipos.isEmpty()) {
-            error("No hay tipos de solicitud registrados. Registre uno primero.");
-            return;
-        }
-
-        System.out.println("\n  Tipos de solicitud disponibles:");
-        for (int i = 0; i < tipos.size(); i++) {
-            TipoSolicitud t = tipos.get(i);
-            System.out.printf("  %d. %s — %s (estimado: %d días)%n",
-                    i + 1, t.getNombre(), t.getDescripcion(), t.getTiempoEstimadoDias());
-        }
-
-        int idxTipo = leerOpcion(tipos.size(), "Seleccione el tipo (número)");
-        if (idxTipo == -1) { cancelado(); return; }
-        TipoSolicitud tipoSeleccionado = tipos.get(idxTipo);
-
-        String descripcion = leerDescripcion("Descripción detallada de la solicitud");
-        if (descripcion == null) { cancelado(); return; }
-
+        
+        String descripcion = leerEntradaSimple("Descripción general");
+        if (descripcion == null) return;
+        
+        System.out.print("Tiempo estimado de respuesta (en días): ");
+        String diasStr = scanner.nextLine().trim();
+        if (diasStr.equals("0")) return;
+        
         try {
-            Solicitud solicitud = crearSolicitudUseCase.ejecutar(
-                    new CrearSolicitudCommand(
-                            usuarioSeleccionado.getId(),
-                            tipoSeleccionado.getId(),
-                            descripcion));
-            exito("Solicitud creada. ID: " + solicitud.getId()
-                    + " | Estado inicial: " + solicitud.getEstado());
+            int dias = Integer.parseInt(diasStr);
+            if (dias <= 0) {
+                System.out.println("Error: Los días deben ser mayores a cero.");
+                return;
+            }
+            TipoSolicitud tipo = registrarTipoSolicitudUseCase.ejecutar(new RegistrarTipoSolicitudCommand(nombre, descripcion, dias));
+            System.out.println("Tipo de solicitud guardado. ID: " + tipo.getId());
+        } catch (NumberFormatException e) {
+            System.out.println("Error: Debe ingresar un número entero.");
         } catch (IllegalArgumentException e) {
-            error(e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
     }
 
     private void cambiarEstado() {
-        titulo("Cambiar Estado de una Solicitud");
-        aviso("Escriba 0 en cualquier selección para cancelar y regresar al menú.");
-
-        List<Solicitud> todas = solicitudRepository.buscarTodos();
+        List<Solicitud> todas = listarTodasLasSolicitudesUseCase.ejecutar();
         if (todas.isEmpty()) {
-            error("No hay solicitudes registradas en el sistema.");
+            System.out.println("No existen solicitudes registradas.");
             return;
         }
 
-        System.out.println("  Solicitudes activas:");
+        System.out.println("\nSolicitudes pendientes/activas:");
         for (int i = 0; i < todas.size(); i++) {
             Solicitud s = todas.get(i);
-            String desc = s.getDescripcion().length() > 40
-                    ? s.getDescripcion().substring(0, 40) + "..."
-                    : s.getDescripcion();
-            System.out.printf("  %d. [%s] ID:%d — %s (Usuario: %s)%n",
-                    i + 1, s.getEstado(), s.getId(), desc, s.getUsuario().getNombre());
+            System.out.printf("  %d. ID: %d [%s] - %s (Usuario: %s)%n", 
+                    i + 1, s.getId(), s.getEstado(), s.getTipoSolicitud().getNombre(), s.getUsuario().getNombre());
         }
 
-        int idx = leerOpcion(todas.size(), "Seleccione la solicitud a actualizar (número)");
-        if (idx == -1) { cancelado(); return; }
+        int idx = leerOpcion(todas.size(), "Seleccione la solicitud a modificar");
+        if (idx == -1) return;
         Solicitud seleccionada = todas.get(idx);
 
-        List<EstadoEnum> siguientes = transicionesPosibles(seleccionada.getEstado());
-        if (siguientes.isEmpty()) {
-            aviso("Esta solicitud ya está en estado final (CERRADA). No se puede cambiar.");
-            return;
-        }
-
-        System.out.println("\n  Estado actual: " + seleccionada.getEstado());
-        System.out.println("  Puede cambiar a:");
-        for (int i = 0; i < siguientes.size(); i++) {
-            System.out.printf("  %d. %s%n", i + 1, siguientes.get(i));
-        }
-
-        int idxEstado = leerOpcion(siguientes.size(), "Seleccione el nuevo estado (número)");
-        if (idxEstado == -1) { cancelado(); return; }
-        EstadoEnum nuevoEstado = siguientes.get(idxEstado);
-
-        try {
-            Solicitud actualizada = cambiarEstadoSolicitudUseCase.ejecutar(
-                    new CambiarEstadoCommand(seleccionada.getId(), nuevoEstado));
-            exito("Estado actualizado a: " + actualizada.getEstado()
-                    + " | Notificación registrada automáticamente.");
-        } catch (IllegalArgumentException e) {
-            error(e.getMessage());
-        }
-    }
-
-    private void consultarPorEstado() {
-        titulo("Consultar Solicitudes por Estado");
-        aviso("Escriba 0 para cancelar y regresar al menú.");
-
+        System.out.println("\nEstados de transición:");
         EstadoEnum[] estados = EstadoEnum.values();
-        System.out.println("  Seleccione el estado a consultar:");
         for (int i = 0; i < estados.length; i++) {
             System.out.printf("  %d. %s%n", i + 1, estados[i]);
         }
 
-        int idx = leerOpcion(estados.length, "Opción");
-        if (idx == -1) { cancelado(); return; }
-        EstadoEnum estado = estados[idx];
+        int idxEstado = leerOpcion(estados.length, "Seleccione el nuevo estado");
+        if (idxEstado == -1) return;
+        EstadoEnum nuevoEstado = estados[idxEstado];
 
-        List<Solicitud> resultados = consultarPorEstadoUseCase.ejecutar(
-                new ConsultarPorEstadoQuery(estado));
+        try {
+            cambiarEstadoSolicitudUseCase.ejecutar(new CambiarEstadoCommand(seleccionada.getId(), nuevoEstado));
+            System.out.println("Estado actualizado correctamente.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error de negocio: " + e.getMessage());
+        }
+    }
 
-        if (resultados.isEmpty()) {
-            System.out.println("  No hay solicitudes con estado " + estado + ".");
+    private void consultarPorEstado() {
+        System.out.println("\nFiltros de estado disponibles:");
+        EstadoEnum[] estados = EstadoEnum.values();
+        for (int i = 0; i < estados.length; i++) {
+            System.out.printf("  %d. %s%n", i + 1, estados[i]);
+        }
+
+        int idx = leerOpcion(estados.length, "Seleccione un filtro");
+        if (idx == -1) return;
+        EstadoEnum estadoBusqueda = estados[idx];
+
+        List<Solicitud> filtradas = consultarSolicitudesPorEstadoUseCase.ejecutar(new ConsultarPorEstadoQuery(estadoBusqueda));
+        
+        if (usuarioAutenticado.getRol() == RolEnum.SOLICITANTE) {
+            filtradas = filtradas.stream()
+                    .filter(s -> s.getUsuario().getId().equals(usuarioAutenticado.getId()))
+                    .toList();
+        }
+
+        System.out.println("\n--- RESULTADOS (" + estadoBusqueda + ") ---");
+        if (filtradas.isEmpty()) {
+            System.out.println("No se encontraron registros.");
             return;
         }
 
-        System.out.println("\n  Solicitudes en estado " + estado
-                + " (" + resultados.size() + " encontradas):");
-        linea();
-        for (Solicitud s : resultados) {
-            System.out.printf("  ID: %d%n",         s.getId());
-            System.out.printf("  Usuario:  %s%n",   s.getUsuario().getNombre());
-            System.out.printf("  Tipo:     %s%n",   s.getTipoSolicitud().getNombre());
-            System.out.printf("  Fecha:    %s%n",   s.getFechaCreacion());
-            System.out.printf("  Detalle:  %s%n",   s.getDescripcion());
-            linea();
+        for (Solicitud s : filtradas) {
+            System.out.printf("ID: %d | Trámite: %s | Solicitante: %s | Creado: %s%n",
+                    s.getId(), s.getTipoSolicitud().getNombre(), s.getUsuario().getNombre(), s.getFechaCreacion());
+            System.out.println("Detalle: " + s.getDescripcion());
+            System.out.println("----------------------------------------");
         }
     }
 
     private void generarReporte() {
-        titulo("Reporte General de Solicitudes");
-        try {
-            ReporteResponse r = generarReporteUseCase.ejecutar(new GenerarReporteQuery());
-            System.out.printf("  Total de solicitudes : %d%n", r.getTotal());
-            linea();
-            System.out.printf("  CREADAS              : %d%n", r.getCreadas());
-            System.out.printf("  EN REVISIÓN          : %d%n", r.getEnRevision());
-            System.out.printf("  APROBADAS            : %d%n", r.getAprobadas());
-            System.out.printf("  RECHAZADAS           : %d%n", r.getRechazadas());
-            System.out.printf("  CERRADAS             : %d%n", r.getCerradas());
-            linea();
-        } catch (Exception e) {
-            error("No se pudo generar el reporte: " + e.getMessage());
-        }
+        System.out.println("\n--- REPORTE GENERAL DEL SISTEMA ---");
+        ReporteResponse reporte = generarReporteUseCase.ejecutar(new GenerarReporteQuery());
+        System.out.println(reporte.toString());
     }
 
-    private String leerNombre(String etiqueta) {
-        while (true) {
-            System.out.print("  " + etiqueta + ": ");
-            String valor = scanner.nextLine().trim();
-
-            if (valor.equals("0")) return null;
-
-            if (valor.isEmpty()) {
-                error("El campo no puede estar vacío. Intente de nuevo.");
-                continue;
-            }
-            if (!SOLO_LETRAS.matcher(valor).matches()) {
-                error("El nombre solo puede contener letras y espacios (sin números ni símbolos). Intente de nuevo.");
-                continue;
-            }
-            if (valor.length() < 2) {
-                error("El nombre debe tener al menos 2 caracteres. Intente de nuevo.");
-                continue;
-            }
-            return valor;
+    private String leerEntradaSimple(String etiqueta) {
+        System.out.print(etiqueta + " (o '0' para cancelar): ");
+        String valor = scanner.nextLine().trim();
+        if (valor.equals("0") || valor.isEmpty()) {
+            System.out.println("Operación cancelada.");
+            return null;
         }
+        return valor;
     }
-
-
-    private String leerNombreTipo(String etiqueta) {
-        while (true) {
-            System.out.print("  " + etiqueta + ": ");
-            String valor = scanner.nextLine().trim();
-
-            if (valor.equals("0")) return null;
-
-            if (valor.isEmpty()) {
-                error("El campo no puede estar vacío. Intente de nuevo.");
-                continue;
-            }
-            if (!NOMBRE_TIPO.matcher(valor).matches()) {
-                error("El nombre solo puede contener letras, números, espacios y puntuación básica (., -). Intente de nuevo.");
-                continue;
-            }
-            if (valor.length() < 3) {
-                error("El nombre debe tener al menos 3 caracteres. Intente de nuevo.");
-                continue;
-            }
-            return valor;
-        }
-    }
-
-
-    private String leerCorreo(String etiqueta) {
-        while (true) {
-            System.out.print("  " + etiqueta + ": ");
-            String valor = scanner.nextLine().trim();
-
-            if (valor.equals("0")) return null;
-
-            if (valor.isEmpty()) {
-                error("El correo no puede estar vacío. Intente de nuevo.");
-                continue;
-            }
-            if (!CORREO_VALIDO.matcher(valor).matches()) {
-                error("Formato de correo inválido. Ejemplo correcto: usuario@dominio.com. Intente de nuevo.");
-                continue;
-            }
-            return valor;
-        }
-    }
-
-
-    private String leerDescripcion(String etiqueta) {
-        while (true) {
-            System.out.print("  " + etiqueta + ": ");
-            String valor = scanner.nextLine().trim();
-
-            if (valor.equals("0")) return null;
-
-            if (valor.isEmpty()) {
-                error("La descripción no puede estar vacía. Intente de nuevo.");
-                continue;
-            }
-            if (valor.length() < MIN_DESCRIPCION) {
-                error("La descripción debe tener al menos " + MIN_DESCRIPCION
-                        + " caracteres (tiene " + valor.length() + "). Intente de nuevo.");
-                continue;
-            }
-            return valor;
-        }
-    }
-
-    private Integer leerEnteroPositivo(String etiqueta) {
-        while (true) {
-            System.out.print("  " + etiqueta + ": ");
-            String entrada = scanner.nextLine().trim();
-
-            if (entrada.equals("0")) return null;
-
-            if (entrada.isEmpty()) {
-                error("El campo no puede estar vacío. Ingrese un número entero positivo.");
-                continue;
-            }
-
-            if (!entrada.matches("\\d+")) {
-                error("Debe ingresar únicamente dígitos (número entero positivo). Intente de nuevo.");
-                continue;
-            }
-
-            try {
-                int valor = Integer.parseInt(entrada);
-                if (valor <= 0) {
-                    error("El número debe ser mayor que cero. Intente de nuevo.");
-                    continue;
-                }
-                return valor;
-            } catch (NumberFormatException e) {
-                error("Número demasiado grande. Ingrese un valor entero válido.");
-            }
-        }
-    }
-
-
-    private RolEnum leerRol() {
-        while (true) {
-            System.out.println("  Tipo de usuario:");
-            System.out.println("  1. SOLICITANTE  (puede crear solicitudes)");
-            System.out.println("  2. FUNCIONARIO  (puede gestionar solicitudes)");
-            System.out.println("  0. Cancelar");
-            System.out.print("  Elija 0, 1 o 2: ");
-            String rolOpc = scanner.nextLine().trim();
-
-            switch (rolOpc) {
-                case "0" -> { return null; }
-                case "1" -> { return RolEnum.SOLICITANTE; }
-                case "2" -> { return RolEnum.FUNCIONARIO; }
-                default  -> error("Opción no válida. Ingrese 1, 2 o 0 para cancelar.");
-            }
-        }
-    }
-
 
     private int leerOpcion(int max, String etiqueta) {
         while (true) {
-            System.out.print("  " + etiqueta + " (0 para cancelar): ");
+            System.out.print(etiqueta + " (0 para volver): ");
             String entrada = scanner.nextLine().trim();
-
             if (entrada.equals("0")) return -1;
-
-            if (entrada.isEmpty()) {
-                error("Debe ingresar un número. Intente de nuevo.");
-                continue;
-            }
-
-            if (!entrada.matches("\\d+")) {
-                error("Solo se aceptan números. Intente de nuevo.");
-                continue;
-            }
-
             try {
                 int n = Integer.parseInt(entrada);
                 if (n < 1 || n > max) {
-                    error("Ingrese un número entre 1 y " + max + ". Intente de nuevo.");
+                    System.out.println("Opción fuera de rango.");
                     continue;
                 }
                 return n - 1;
             } catch (NumberFormatException e) {
-                error("Número inválido. Intente de nuevo.");
+                System.out.println("Ingrese un número entero.");
             }
         }
-    }
-
-
-    private List<EstadoEnum> transicionesPosibles(EstadoEnum actual) {
-        return switch (actual) {
-            case CREADA      -> List.of(EstadoEnum.EN_REVISION);
-            case EN_REVISION -> List.of(EstadoEnum.APROBADA, EstadoEnum.RECHAZADA);
-            case APROBADA,
-                 RECHAZADA   -> List.of(EstadoEnum.CERRADA);
-            case CERRADA     -> List.of();
-        };
-    }
-
-
-    private void titulo(String texto) {
-        System.out.println();
-        linea();
-        System.out.println("  " + texto);
-        linea();
-    }
-
-    private void linea() {
-        System.out.println("  ----------------------------------------");
-    }
-
-    private void exito(String mensaje) {
-        System.out.println("  ✔ " + mensaje);
-    }
-
-    private void error(String mensaje) {
-        System.out.println("  ✘ Error: " + mensaje);
-    }
-
-    private void aviso(String mensaje) {
-        System.out.println("  ℹ  " + mensaje);
-    }
-
-    private void cancelado() {
-        System.out.println("  ↩  Operación cancelada. Regresando al menú principal.");
     }
 }

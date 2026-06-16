@@ -1,14 +1,12 @@
 package games.solisystem.application.command;
 
-import games.solisystem.application.dto.CambiarEstadoCommand;
-import games.solisystem.domain.entity.Solicitud;
-import games.solisystem.domain.enums.EstadoEnum;
-import games.solisystem.domain.observer.SolicitudObserver;
-import games.solisystem.domain.repository.SolicitudRepository;
-
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import games.solisystem.application.dto.CambiarEstadoCommand;
+import games.solisystem.domain.entity.Solicitud;
+import games.solisystem.domain.observer.SolicitudObserver;
+import games.solisystem.domain.repository.SolicitudRepository;
 
 public class CambiarEstadoSolicitudUseCase {
 
@@ -23,24 +21,26 @@ public class CambiarEstadoSolicitudUseCase {
     }
 
     public Solicitud ejecutar(CambiarEstadoCommand command) {
-    validar(command);
-    
-    Solicitud solicitud = solicitudRepository.buscarPorId(command.getSolicitudId())
-            .orElseThrow(() -> new IllegalArgumentException("La solicitud no existe."));
-    
-    validarTransicion(solicitud.getEstado(), command.getNuevoEstado());
-    solicitud.cambiarEstado(command.getNuevoEstado());
-    solicitudRepository.actualizar(solicitud);
+        validarComando(command);
+        
+        Solicitud solicitud = solicitudRepository.buscarPorId(command.getSolicitudId())
+                .orElseThrow(() -> new IllegalArgumentException("La solicitud no existe."));
+        
+        // Delegamos la lógica empresarial de transición enteramente a la entidad de dominio
+        solicitud.cambiarEstado(command.getNuevoEstado());
+        
+        solicitudRepository.actualizar(solicitud);
 
+        // Notificar a los observadores de la infraestructura/aplicación
+        for (SolicitudObserver observer : observers) {
+            observer.onEstadoCambiado(solicitud);
+        }
 
-    for (SolicitudObserver observer : observers) {
-        observer.onEstadoCambiado(solicitud);
+        return solicitud;
     }
 
-    return solicitud;
-}
-
-    private void validar(CambiarEstadoCommand command) {
+    // Esta validación sí pertenece a la aplicación (valida los datos de entrada del DTO/Comando)
+    private void validarComando(CambiarEstadoCommand command) {
         if (command == null) {
             throw new IllegalArgumentException("El comando no puede ser nulo.");
         }
@@ -49,17 +49,6 @@ public class CambiarEstadoSolicitudUseCase {
         }
         if (command.getNuevoEstado() == null) {
             throw new IllegalArgumentException("El nuevo estado es obligatorio.");
-        }
-    }
-
-    private void validarTransicion(EstadoEnum actual, EstadoEnum nuevo) {
-        boolean permitida = (actual == EstadoEnum.CREADA && nuevo == EstadoEnum.EN_REVISION) ||
-                (actual == EstadoEnum.EN_REVISION && (nuevo == EstadoEnum.APROBADA || nuevo == EstadoEnum.RECHAZADA)) ||
-                ((actual == EstadoEnum.APROBADA || actual == EstadoEnum.RECHAZADA) && nuevo == EstadoEnum.CERRADA) ||
-                (actual == nuevo);
-
-        if (!permitida) {
-            throw new IllegalArgumentException("Transición no permitida de " + actual + " a " + nuevo);
         }
     }
 }

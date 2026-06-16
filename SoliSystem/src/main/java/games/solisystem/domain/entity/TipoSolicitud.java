@@ -9,47 +9,42 @@ public class TipoSolicitud {
     public TipoSolicitud() {}
 
     public TipoSolicitud(Long id, String nombre, String descripcion, int tiempoEstimadoDias) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.tiempoEstimadoDias = tiempoEstimadoDias;
+        setId(id);
+        setNombre(nombre);
+        setDescripcion(descripcion);
+        setTiempoEstimadoDias(tiempoEstimadoDias);
     }
 
     public TipoSolicitud(String nombre, String descripcion, int tiempoEstimadoDias) {
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.tiempoEstimadoDias = tiempoEstimadoDias;
+        this(null, nombre, descripcion, tiempoEstimadoDias);
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
+    // --- Invariantes de Dominio ---
 
     public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del tipo de solicitud es obligatorio.");
+        }
+        this.nombre = nombre.trim();
     }
 
     public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public int getTiempoEstimadoDias() {
-        return tiempoEstimadoDias;
+        if (descripcion == null || descripcion.trim().isEmpty()) {
+            throw new IllegalArgumentException("La descripción del tipo de solicitud es obligatoria.");
+        }
+        this.descripcion = descripcion.trim();
     }
 
     public void setTiempoEstimadoDias(int tiempoEstimadoDias) {
+        if (tiempoEstimadoDias <= 0) {
+            throw new IllegalArgumentException("El tiempo estimado debe ser mayor a cero días.");
+        }
         this.tiempoEstimadoDias = tiempoEstimadoDias;
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getNombre() { return nombre; }
+    public String getDescripcion() { return descripcion; }
+    public int getTiempoEstimadoDias() { return tiempoEstimadoDias; }
 }

@@ -13,30 +13,26 @@ public class RegistrarTipoSolicitudUseCase {
     }
 
     public TipoSolicitud ejecutar(RegistrarTipoSolicitudCommand command) {
-        validar(command);
-
-        TipoSolicitud tipoSolicitud = new TipoSolicitud(
-                null,
-                command.getNombre().trim(),
-                command.getDescripcion().trim(),
-                command.getTiempoEstimadoDias());
-
-        tipoSolicitudRepository.guardar(tipoSolicitud);
-        return tipoSolicitud;
-    }
-
-    private void validar(RegistrarTipoSolicitudCommand command) {
         if (command == null) {
             throw new IllegalArgumentException("El comando no puede ser nulo.");
         }
-        if (command.getNombre() == null || command.getNombre().trim().isEmpty()) {
-            throw new IllegalArgumentException("El nombre es obligatorio.");
+
+        // Validación de duplicados en la persistencia (Regla de aplicación)
+        if (tipoSolicitudRepository.buscarPorNombre(command.getNombre()).isPresent()) {
+            throw new IllegalArgumentException("El tipo de solicitud ya existe con ese nombre.");
         }
-        if (command.getDescripcion() == null || command.getDescripcion().trim().isEmpty()) {
-            throw new IllegalArgumentException("La descripcion es obligatoria.");
-        }
-        if (command.getTiempoEstimadoDias() <= 0) {
-            throw new IllegalArgumentException("El tiempo estimado debe ser mayor que cero.");
-        }
+
+        // El constructor de TipoSolicitud valida que el nombre/descripción no estén vacíos
+        // y que el tiempo estimado en días sea estrictamente mayor a 0.
+        TipoSolicitud tipoSolicitud = new TipoSolicitud(
+                command.getNombre(),
+                command.getDescripcion(),
+                command.getTiempoEstimadoDias()
+        );
+
+        // CORRECCIÓN: Guardar (operación void) y luego retornar el objeto creado
+        this.tipoSolicitudRepository.guardar(tipoSolicitud);
+
+        return tipoSolicitud;
     }
 }

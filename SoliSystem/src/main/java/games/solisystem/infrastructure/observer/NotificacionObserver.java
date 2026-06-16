@@ -1,7 +1,5 @@
 package games.solisystem.infrastructure.observer;
 
-import java.time.LocalDate;
-
 import games.solisystem.domain.entity.Notificacion;
 import games.solisystem.domain.entity.Solicitud;
 import games.solisystem.domain.observer.SolicitudObserver;
@@ -18,12 +16,14 @@ public class NotificacionObserver implements SolicitudObserver {
     @Override
     public void onSolicitudCreada(Solicitud solicitud) {
         String mensaje = "Se creó una nueva solicitud: '" + solicitud.getDescripcion() + "' con estado " + solicitud.getEstado().name();
+        
+        // CORRECCIÓN: Usamos el nuevo constructor semántico rico del dominio
         Notificacion notificacion = new Notificacion(
             solicitud,
             mensaje,
-            LocalDate.now(),
-            solicitud.getEstado().name()
+            solicitud.getEstado()
         );
+        
         notificacionRepository.guardar(notificacion);
         System.out.println("[NOTIFICACIÓN] " + mensaje);
     }
@@ -31,12 +31,14 @@ public class NotificacionObserver implements SolicitudObserver {
     @Override
     public void onEstadoCambiado(Solicitud solicitud) {
         String mensaje = "La solicitud #" + solicitud.getId() + " cambió al estado: " + solicitud.getEstado().name();
+        
+        // CORRECCIÓN: Usamos el nuevo constructor semántico rico del dominio
         Notificacion notificacion = new Notificacion(
             solicitud,
             mensaje,
-            LocalDate.now(),
-            solicitud.getEstado().name()
+            solicitud.getEstado()
         );
+        
         notificacionRepository.guardar(notificacion);
         System.out.println("[NOTIFICACIÓN] " + mensaje);
     }

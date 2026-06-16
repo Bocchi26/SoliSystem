@@ -1,54 +1,51 @@
 package games.solisystem.application.dto;
 
+import java.util.List;
+
+import games.solisystem.domain.entity.Solicitud;
+import games.solisystem.domain.enums.EstadoEnum;
+
 public class ReporteResponse {
-    private final long total;
-    private final long creadas;
-    private final long enRevision;
-    private final long aprobadas;
-    private final long rechazadas;
-    private final long cerradas;
+    private final int totalSolicitudes;
+    private final long solicitudesResueltas;
+    private final long solicitudesPendientes;
+    private final List<Solicitud> todasLasSolicitudes;
 
-    public ReporteResponse(long total, long creadas, long enRevision, long aprobadas, long rechazadas, long cerradas) {
-        this.total = total;
-        this.creadas = creadas;
-        this.enRevision = enRevision;
-        this.aprobadas = aprobadas;
-        this.rechazadas = rechazadas;
-        this.cerradas = cerradas;
-    }
-
-    public long getTotal() {
-        return total;
-    }
-
-    public long getCreadas() {
-        return creadas;
-    }
-
-    public long getEnRevision() {
-        return enRevision;
-    }
-
-    public long getAprobadas() {
-        return aprobadas;
-    }
-
-    public long getRechazadas() {
-        return rechazadas;
-    }
-
-    public long getCerradas() {
-        return cerradas;
+    public ReporteResponse(int totalSolicitudes, long solicitudesResueltas, long solicitudesPendientes, List<Solicitud> todasLasSolicitudes) {
+        this.totalSolicitudes = totalSolicitudes;
+        this.solicitudesResueltas = solicitudesResueltas;
+        this.solicitudesPendientes = solicitudesPendientes;
+        this.todasLasSolicitudes = todasLasSolicitudes;
     }
 
     @Override
     public String toString() {
-        return "=== Reporte de Solicitudes ===\n" +
-                "Total:       " + total + "\n" +
-                "Creadas:     " + creadas + "\n" +
-                "En Revisión: " + enRevision + "\n" +
-                "Aprobadas:   " + aprobadas + "\n" +
-                "Rechazadas:  " + rechazadas + "\n" +
-                "Cerradas:    " + cerradas;
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("\n--- RESUMEN GENERAL ---\n");
+        sb.append("Total solicitudes: ").append(totalSolicitudes).append("\n");
+        sb.append("Resueltas: ").append(solicitudesResueltas).append("\n");
+        sb.append("Pendientes: ").append(solicitudesPendientes).append("\n");
+        
+        sb.append("\n--- SOLICITUDES POR ESTADO ---\n");
+        for (EstadoEnum estado : EstadoEnum.values()) {
+            List<Solicitud> filtradas = todasLasSolicitudes.stream()
+                    .filter(s -> s.getEstado() == estado)
+                    .toList();
+
+            sb.append("[").append(estado).append("] (").append(filtradas.size()).append(")\n");
+            
+            if (filtradas.isEmpty()) {
+                sb.append("  No hay solicitudes.\n");
+            } else {
+                for (Solicitud s : filtradas) {
+                    sb.append("  ID: ").append(s.getId())
+                      .append(" | Tipo: ").append(s.getTipoSolicitud().getNombre())
+                      .append(" | Usuario: ").append(s.getUsuario().getNombre())
+                      .append("\n");
+                }
+            }
+        }
+        return sb.toString();
     }
 }

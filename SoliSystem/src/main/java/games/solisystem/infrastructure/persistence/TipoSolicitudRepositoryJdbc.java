@@ -1,13 +1,17 @@
 package games.solisystem.infrastructure.persistence;
 
-import games.solisystem.domain.entity.TipoSolicitud;
-import games.solisystem.domain.repository.TipoSolicitudRepository;
-import games.solisystem.infrastructure.config.DatabaseConfig;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import games.solisystem.domain.entity.TipoSolicitud;
+import games.solisystem.domain.repository.TipoSolicitudRepository;
+import games.solisystem.infrastructure.config.DatabaseConfig;
 
 public class TipoSolicitudRepositoryJdbc implements TipoSolicitudRepository {
 
@@ -27,6 +31,30 @@ public class TipoSolicitudRepositoryJdbc implements TipoSolicitudRepository {
             throw new RuntimeException("Error al guardar el tipo de solicitud", e);
         }
     }
+    
+@Override
+public Optional<TipoSolicitud> buscarPorNombre(String nombre) {
+    String sql = "SELECT id, nombre, descripcion, tiempo_estimado_dias FROM tipos_solicitud WHERE nombre = ?";
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+        
+        ps.setString(1, nombre);
+        try (ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                TipoSolicitud tipo = new TipoSolicitud(
+                    rs.getLong("id"),
+                    rs.getString("nombre"),
+                    rs.getString("descripcion"),
+                    rs.getInt("tiempo_estimado_dias")
+                );
+                return Optional.of(tipo);
+            }
+        }
+    } catch (SQLException e) {
+        throw new RuntimeException("Error al buscar tipo de solicitud por nombre", e);
+    }
+    return Optional.empty();
+}
 
     @Override
     public Optional<TipoSolicitud> buscarPorId(Long id) {
